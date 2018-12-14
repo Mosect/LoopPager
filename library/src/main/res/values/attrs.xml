@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="LoopPager">
+        <!--方向-->
+        <attr name="orientation" format="enum">
+            <enum name="horizontal" value="1" />
+            <enum name="vertical" value="2" />
+        </attr>
+        <!--循环-->
+        <attr name="loop" format="flags">
+            <flag name="none" value="0" />
+            <flag name="left" value="1" />
+            <flag name="top" value="2" />
+            <flag name="right" value="4" />
+            <flag name="bottom" value="8" />
+            <flag name="horizontal" value="5" />
+            <flag name="vertical" value="10" />
+            <flag name="all" value="15" />
+        </attr>
+        <!--滑动速度-->
+        <attr name="smoothVelocity" format="dimension|reference" />
+        <!--前缓存数量-->
+        <attr name="beforeCache" format="integer" />
+        <!--后缓存数量-->
+        <attr name="afterCache" format="integer" />
+        <!--是否可以触摸滑动页面-->
+        <attr name="touchScroll" format="boolean" />
+    </declare-styleable>
+</resources>
