@@ -161,6 +161,14 @@ public class LoopPager extends FrameLayout implements AdapterHost {
         gestureHelper = GestureHelper.createDefault(getContext());
         scrollHelper = new ScrollHelper(gestureHelper) {
             @Override
+            protected boolean canScroll() {
+                return (orientation == ORIENTATION_HORIZONTAL &&
+                        gestureHelper.isHorizontalGesture()) ||
+                        (orientation == ORIENTATION_VERTICAL &&
+                                gestureHelper.isVerticalGesture());
+            }
+
+            @Override
             protected int getViewScrollX() {
                 return getPagerScrollX();
             }
@@ -182,6 +190,7 @@ public class LoopPager extends FrameLayout implements AdapterHost {
 
             @Override
             protected void viewScrollTo(int x, int y) {
+                System.out.println(String.format("viewScrollTo:%d,%d", x, y));
                 pagerScrollTo(x, y);
             }
 
@@ -280,6 +289,7 @@ public class LoopPager extends FrameLayout implements AdapterHost {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
+        scrollHelper.onTouchEvent(ev);
         boolean result = interceptTouchHelper.onInterceptTouchEvent(ev);
         if (!isTouchScroll()) {
             return false;
@@ -299,9 +309,8 @@ public class LoopPager extends FrameLayout implements AdapterHost {
         }
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            performClick();
-
             // 停止滑动动画
+            performClick();
             if (!scroller.isFinished()) {
                 scroller.abortAnimation();
             }
@@ -317,6 +326,7 @@ public class LoopPager extends FrameLayout implements AdapterHost {
             scrollHelper.setStartPosition(event.getX(), event.getY());
         }
 
+        System.out.println(String.format("onTouchEvent:psx=%d,psy=%d", getPagerScrollX(), getPagerScrollY()));
         scrollHelper.onTouchEvent(event);
 
         return true;
@@ -780,7 +790,7 @@ public class LoopPager extends FrameLayout implements AdapterHost {
                             int index = getPagerScrollX() / pageSize;
                             if (index != cur) {
                                 pagerManager.setCurrentPage(index);
-//                            System.out.println("selectPage:index=" + index);
+                                System.out.println("selectPage:index=" + index);
                                 selectPage();
                             }
                         }
@@ -791,7 +801,7 @@ public class LoopPager extends FrameLayout implements AdapterHost {
                             int index = getPagerScrollY() / pageSize;
                             if (index != cur) {
                                 pagerManager.setCurrentPage(index);
-//                            System.out.println("selectPage:" + index);
+                                System.out.println("selectPage:" + index);
                                 selectPage();
                             }
                         }

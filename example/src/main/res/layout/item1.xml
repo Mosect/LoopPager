@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mosect.looppager.LoopPager xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/ly_pager"
+    android:layout_width="match_parent"
+    android:layout_height="300dp"
+    app:afterCache="1"
+    app:beforeCache="1"
+    app:loop="horizontal"
+    app:orientation="horizontal"
+    app:smoothVelocity="500dp"
+    app:touchScroll="true">
+
+</com.mosect.looppager.LoopPager>
