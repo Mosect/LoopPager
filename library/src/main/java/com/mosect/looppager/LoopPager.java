@@ -7,11 +7,14 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
-import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.Scroller;
+
+import com.mosect.viewutils.GestureHelper;
+import com.mosect.viewutils.InterceptTouchHelper;
+import com.mosect.viewutils.ScrollHelper;
 
 /**
  * 循环的页控件（类似ViewPager）
@@ -100,11 +103,9 @@ public class LoopPager extends FrameLayout implements AdapterHost {
     private int pagerScrollX; // 当前页面滑动X
     private int pagerScrollY; // 当前页面滑动Y
 
-    private TouchTool touchTool; // 滑动工具，处理滑动方向、偏移量等
+    private ScrollHelper scrollHelper;
+    private GestureHelper gestureHelper;
     private InterceptTouchHelper interceptTouchHelper; // 拦截滑动事件辅助器，决定是否拦截滑动事件
-    private int touchPagerScrollX; // 滑动时，记录的页面滑动偏移量X
-    private int touchPagerScrollY; // 滑动时，记录的页面滑动偏移量Y
-    private VelocityTracker velocityTracker; // 速度计算器
     private float smoothVelocity; // 平滑速度，像素/秒
 
     public LoopPager(Context context) {
@@ -143,9 +144,7 @@ public class LoopPager extends FrameLayout implements AdapterHost {
         setTouchScroll(touchScroll);
 
         scroller = new Scroller(getContext());
-        touchTool = new TouchTool(getContext());
         interceptTouchHelper = new InterceptTouchHelper(this);
-        velocityTracker = VelocityTracker.obtain();
         pagerManager = new PagerManager(this) {
             @Override
             protected void onAddPage(ViewGroup parent, PageHolder holder) {
@@ -157,6 +156,109 @@ public class LoopPager extends FrameLayout implements AdapterHost {
             @Override
             protected void onRemovePage(ViewGroup parent, PageHolder holder) {
                 removeView(holder.view);
+            }
+        };
+        gestureHelper = GestureHelper.createDefault(getContext());
+        scrollHelper = new ScrollHelper(gestureHelper) {
+            @Override
+            protected int getViewScrollX() {
+                return getPagerScrollX();
+            }
+
+            @Override
+            protected int getViewScrollY() {
+                return getPagerScrollY();
+            }
+
+            @Override
+            protected int getViewHorizontallyScrollSize() {
+                return computeHorizontalScrollRange() - computeHorizontalScrollExtent();
+            }
+
+            @Override
+            protected int getViewVerticallyScrollSize() {
+                return computeVerticalScrollRange() - computeVerticalScrollExtent();
+            }
+
+            @Override
+            protected void viewScrollTo(int x, int y) {
+                pagerScrollTo(x, y);
+            }
+
+            @Override
+            protected void viewFling(float xv, float yv) {
+                if (orientation == ORIENTATION_HORIZONTAL &&
+                        computeHorizontalScrollExtent() > 0) {
+
+                    // 水平方向抬起或取消处理：
+                    // 1.布局方向必须是水平
+                    // 2.页的大小（宽度）必须大于0
+                    // 3.滑动方向必须是水平（初次决定的方向）
+
+                    int index; // 需要滑动至的页面下标
+                    if (xv >= smoothVelocity) { // 右滑超过特定速度，滑动至当前页（偏移量为0）
+                        index = getPagerScrollX() / computeHorizontalScrollExtent();
+
+                    } else if (xv <= -smoothVelocity) { // 左滑超过特定速度，滑动至下一页
+                        index = getPagerScrollX() / computeHorizontalScrollExtent() + 1;
+
+                    } else {
+                        // 计算相对于当前滑动页的偏移量
+                        int offset = getPagerScrollX() % computeHorizontalScrollExtent();
+                        // 计算当前滑动页属于第几页
+                        index = getPagerScrollX() / computeHorizontalScrollExtent();
+                        // 如果超过一半，应该滑动至下一页
+                        if (offset > computeHorizontalScrollExtent() / 2) {
+                            index++;
+                        }
+                    }
+
+                    int x = computeHorizontalScrollExtent() * index; // 滑动的终点
+                    // 限定滑动的终点，不能超出有效范围
+                    if (x < 0) {
+                        x = 0;
+                    } else if (x + computeHorizontalScrollExtent() > computeHorizontalScrollRange()) {
+                        x = computeHorizontalScrollRange() - computeHorizontalScrollExtent();
+                    }
+                    // 平滑至指定位置
+                    smoothPagerScrollTo(x, 0);
+
+                } else if (orientation == ORIENTATION_VERTICAL &&
+                        computeVerticalScrollExtent() > 0) {
+                    // 垂直方向抬起或取消处理：
+                    // 1.布局方向必须是垂直
+                    // 2.页的大小（高度）必须大于0
+                    // 3.滑动方向必须是垂直（初次决定的方向）
+
+                    int index; // 需要滑动至的页面下标
+                    if (yv >= smoothVelocity) { // 下滑超过特定速度，滑动至当前页（偏移量为0）
+                        index = getPagerScrollY() / computeVerticalScrollExtent();
+
+                    } else if (yv <= -smoothVelocity) { // 左滑超过特定速度，滑动至下一页
+                        index = getPagerScrollY() / computeVerticalScrollExtent() + 1;
+
+                    } else {
+                        // 计算相对于当前滑动页的偏移量
+                        int offset = getPagerScrollY() % computeVerticalScrollExtent();
+                        // 计算当前滑动页属于第几页
+                        index = getPagerScrollY() / computeVerticalScrollExtent();
+                        // 如果超过一半，应该滑动至下一页
+                        if (offset > computeVerticalScrollExtent() / 2) {
+                            index++;
+                        }
+                    }
+
+                    int y = computeVerticalScrollExtent() * index; // 滑动的终点
+                    // 限定滑动的终点，不能超出有效范围
+                    if (y <= 0) {
+                        y = 0;
+                    } else if (y + computeVerticalScrollExtent() >= computeVerticalScrollRange()) {
+                        y = computeVerticalScrollRange() - computeVerticalScrollExtent();
+                    }
+                    // 平滑至指定位置
+                    smoothPagerScrollTo(0, y);
+
+                }
             }
         };
     }
@@ -178,7 +280,6 @@ public class LoopPager extends FrameLayout implements AdapterHost {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        touchTool.onTouchEvent(ev);
         boolean result = interceptTouchHelper.onInterceptTouchEvent(ev);
         if (!isTouchScroll()) {
             return false;
@@ -197,12 +298,8 @@ public class LoopPager extends FrameLayout implements AdapterHost {
             return false;
         }
 
-        touchTool.onTouchEvent(event);
-        velocityTracker.addMovement(event);
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             performClick();
-            touchPagerScrollX = getPagerScrollX();
-            touchPagerScrollY = getPagerScrollY();
 
             // 停止滑动动画
             if (!scroller.isFinished()) {
@@ -210,130 +307,18 @@ public class LoopPager extends FrameLayout implements AdapterHost {
             }
             actionFlag |= ACTION_FLAG_TOUCHING;
             actionFlag &= ~ACTION_FLAG_RESET_TOUCH; // 取消重置滑动
-        }
-
-        boolean reset = false; // 表示是否需要重置起始点，滑动超出有效范围应该设置为true
-        if ((actionFlag & ACTION_FLAG_RESET_TOUCH) != 0) {
-            actionFlag &= ~ACTION_FLAG_RESET_TOUCH; // 取消重置标志
-            reset = true;
-        }
-
-        if (touchTool.getTouchType() == TouchTool.TOUCH_TYPE_HORIZONTAL &&
-                orientation == ORIENTATION_HORIZONTAL) { // 水平方向
-            // 滑动点 = 起始点 - 滑动的偏移量（当前滑动位置 - 起始滑动滑动位置）
-            int x = (int) (touchPagerScrollX - touchTool.getRangeX());
-            if (x < 0) {
-                x = 0;
-                reset = true;
-            } else if (x + computeHorizontalScrollExtent() > computeHorizontalScrollRange()) {
-                x = computeHorizontalScrollRange() - computeHorizontalScrollExtent();
-                reset = true;
-            }
-            pagerScrollTo(x, 0);
-
-        } else if (touchTool.getTouchType() == TouchTool.TOUCH_TYPE_VERTICAL &&
-                orientation == ORIENTATION_VERTICAL) { // 垂直方向
-
-            // 滑动点 = 起始点 - 滑动的偏移量（当前滑动位置 - 起始滑动滑动位置）
-            int y = (int) (touchPagerScrollY - touchTool.getRangeY());
-            if (y < 0) {
-                y = 0;
-                reset = true;
-            } else if (y + computeVerticalScrollExtent() > computeVerticalScrollRange()) {
-                y = computeVerticalScrollRange() - computeVerticalScrollExtent();
-                reset = true;
-            }
-            pagerScrollTo(0, y);
-        }
-
-        if (reset) {
-            touchTool.resetFirst(event);
-            touchPagerScrollX = getPagerScrollX();
-            touchPagerScrollY = getPagerScrollY();
-        }
-
-        if (event.getAction() == MotionEvent.ACTION_UP ||
+        } else if (event.getAction() == MotionEvent.ACTION_UP ||
                 event.getAction() == MotionEvent.ACTION_CANCEL) { // 滑动抬起或取消
             actionFlag &= ~ACTION_FLAG_TOUCHING; // 取消触摸
-            velocityTracker.computeCurrentVelocity(1000); // 计算速度
-
-            if (orientation == ORIENTATION_HORIZONTAL &&
-                    computeHorizontalScrollExtent() > 0 &&
-                    touchTool.getTouchType() == TouchTool.TOUCH_TYPE_HORIZONTAL) {
-
-                // 水平方向抬起或取消处理：
-                // 1.布局方向必须是水平
-                // 2.页的大小（宽度）必须大于0
-                // 3.滑动方向必须是水平（初次决定的方向）
-
-                float xv = velocityTracker.getXVelocity();
-                int index; // 需要滑动至的页面下标
-                if (xv >= smoothVelocity) { // 右滑超过特定速度，滑动至当前页（偏移量为0）
-                    index = getPagerScrollX() / computeHorizontalScrollExtent();
-
-                } else if (xv <= -smoothVelocity) { // 左滑超过特定速度，滑动至下一页
-                    index = getPagerScrollX() / computeHorizontalScrollExtent() + 1;
-
-                } else {
-                    // 计算相对于当前滑动页的偏移量
-                    int offset = getPagerScrollX() % computeHorizontalScrollExtent();
-                    // 计算当前滑动页属于第几页
-                    index = getPagerScrollX() / computeHorizontalScrollExtent();
-                    // 如果超过一半，应该滑动至下一页
-                    if (offset > computeHorizontalScrollExtent() / 2) {
-                        index++;
-                    }
-                }
-
-                int x = computeHorizontalScrollExtent() * index; // 滑动的终点
-                // 限定滑动的终点，不能超出有效范围
-                if (x < 0) {
-                    x = 0;
-                } else if (x + computeHorizontalScrollExtent() > computeHorizontalScrollRange()) {
-                    x = computeHorizontalScrollRange() - computeHorizontalScrollExtent();
-                }
-                // 平滑至指定位置
-                smoothPagerScrollTo(x, 0);
-
-            } else if (orientation == ORIENTATION_VERTICAL &&
-                    computeVerticalScrollExtent() > 0 &&
-                    touchTool.getTouchType() == TouchTool.TOUCH_TYPE_VERTICAL) {
-                // 垂直方向抬起或取消处理：
-                // 1.布局方向必须是垂直
-                // 2.页的大小（高度）必须大于0
-                // 3.滑动方向必须是垂直（初次决定的方向）
-
-                float yv = velocityTracker.getYVelocity();
-                int index; // 需要滑动至的页面下标
-                if (yv >= smoothVelocity) { // 下滑超过特定速度，滑动至当前页（偏移量为0）
-                    index = getPagerScrollY() / computeVerticalScrollExtent();
-
-                } else if (yv <= -smoothVelocity) { // 左滑超过特定速度，滑动至下一页
-                    index = getPagerScrollY() / computeVerticalScrollExtent() + 1;
-
-                } else {
-                    // 计算相对于当前滑动页的偏移量
-                    int offset = getPagerScrollY() % computeVerticalScrollExtent();
-                    // 计算当前滑动页属于第几页
-                    index = getPagerScrollY() / computeVerticalScrollExtent();
-                    // 如果超过一半，应该滑动至下一页
-                    if (offset > computeVerticalScrollExtent() / 2) {
-                        index++;
-                    }
-                }
-
-                int y = computeVerticalScrollExtent() * index; // 滑动的终点
-                // 限定滑动的终点，不能超出有效范围
-                if (y <= 0) {
-                    y = 0;
-                } else if (y + computeVerticalScrollExtent() >= computeVerticalScrollRange()) {
-                    y = computeVerticalScrollRange() - computeVerticalScrollExtent();
-                }
-                // 平滑至指定位置
-                smoothPagerScrollTo(0, y);
-
-            }
         }
+
+        if ((actionFlag & ACTION_FLAG_RESET_TOUCH) != 0) {
+            actionFlag &= ~ACTION_FLAG_RESET_TOUCH; // 取消重置标志
+            scrollHelper.setStartPosition(event.getX(), event.getY());
+        }
+
+        scrollHelper.onTouchEvent(event);
+
         return true;
     }
 
@@ -350,8 +335,8 @@ public class LoopPager extends FrameLayout implements AdapterHost {
     public void computeScroll() {
         super.computeScroll();
         if (scroller.computeScrollOffset()) {
-//            System.out.println(String.format("computeScroll:curX=%d,curY=%d,finalX=%d,finalY=%d,pagerX=%d,pagerY=%d",
-//                    scroller.getCurrX(), scroller.getCurrY(), scroller.getFinalX(), scroller.getFinalY(), getPagerScrollX(), getPagerScrollY()));
+            System.out.println(String.format("computeScroll:curX=%d,curY=%d,finalX=%d,finalY=%d,pagerX=%d,pagerY=%d",
+                    scroller.getCurrX(), scroller.getCurrY(), scroller.getFinalX(), scroller.getFinalY(), getPagerScrollX(), getPagerScrollY()));
             if (scroller.getCurrX() == scroller.getFinalX() &&
                     getPagerScrollX() == scroller.getFinalX() &&
                     scroller.getCurrY() == scroller.getFinalY() &&
@@ -360,7 +345,6 @@ public class LoopPager extends FrameLayout implements AdapterHost {
                 scroller.abortAnimation();
             }
             pagerScrollTo(scroller.getCurrX(), scroller.getCurrY());
-            invalidate();
         }
     }
 
@@ -447,6 +431,9 @@ public class LoopPager extends FrameLayout implements AdapterHost {
         pagerScrollX = x;
         pagerScrollY = y;
         layoutChildren();
+        if (getParent() instanceof View) {
+            ((View) getParent()).invalidate(); // 必须执行父视图更新，不然computeScroll方法不会完全走完
+        }
         invalidate();
         changePagerScroll();
         onPagerScrollChanged(false, oldX, oldY, x, y);
@@ -501,6 +488,9 @@ public class LoopPager extends FrameLayout implements AdapterHost {
                 throw new IllegalStateException("Adapter has been band a host!!!");
             }
             adapter.setHost(this);
+        }
+        if (null != this.adapter) {
+            this.adapter.setHost(null);
         }
         this.adapter = adapter;
         actionFlag |= ACTION_FLAG_INIT;
@@ -642,7 +632,6 @@ public class LoopPager extends FrameLayout implements AdapterHost {
             int cur = pagerManager.getCurrentPageIndex();
             if (cur > 0) {
                 scrollToPage(cur - 1, smooth);
-                requestLayout();
             }
         }
     }
@@ -658,7 +647,6 @@ public class LoopPager extends FrameLayout implements AdapterHost {
             int cur = pagerManager.getCurrentPageIndex();
             if (cur >= 0 && cur < showPages - 1) {
                 scrollToPage(cur + 1, smooth);
-                requestLayout();
             }
         }
     }
@@ -778,32 +766,34 @@ public class LoopPager extends FrameLayout implements AdapterHost {
             }
         }
 
-        if (pagerManager.getJumpType() != 0) {
-            pagerManager.finishJump();
+        if (scroller.isFinished()) { // 已经结束平滑
+            if (pagerManager.getJumpType() != 0) {
+                pagerManager.finishJump();
 //            System.out.println("selectPage:" + pagerManager.getCurrentPageIndex());
-            selectPage();
-        } else {
-            int cur = pagerManager.getCurrentPageIndex();
-            if (cur >= 0) {
-                if (orientation == ORIENTATION_HORIZONTAL) {
-                    int pageSize = computeHorizontalScrollExtent(); // 每页的大小
-                    if (pageSize > 0 && getPagerScrollX() % pageSize == 0) { // 刚好滑到某页
-                        int index = getPagerScrollX() / pageSize;
-                        if (index != cur) {
-                            pagerManager.setCurrentPage(index);
+                selectPage();
+            } else {
+                int cur = pagerManager.getCurrentPageIndex();
+                if (cur >= 0) {
+                    if (orientation == ORIENTATION_HORIZONTAL) {
+                        int pageSize = computeHorizontalScrollExtent(); // 每页的大小
+                        if (pageSize > 0 && getPagerScrollX() % pageSize == 0) { // 刚好滑到某页
+                            int index = getPagerScrollX() / pageSize;
+                            if (index != cur) {
+                                pagerManager.setCurrentPage(index);
 //                            System.out.println("selectPage:index=" + index);
-                            selectPage();
+                                selectPage();
+                            }
                         }
-                    }
 
-                } else if (orientation == ORIENTATION_VERTICAL) {
-                    int pageSize = computeVerticalScrollExtent(); // 每页的大小
-                    if (pageSize > 0 && getPagerScrollY() % pageSize == 0) { // 刚好滑到某页
-                        int index = getPagerScrollY() / pageSize;
-                        if (index != cur) {
-                            pagerManager.setCurrentPage(index);
+                    } else if (orientation == ORIENTATION_VERTICAL) {
+                        int pageSize = computeVerticalScrollExtent(); // 每页的大小
+                        if (pageSize > 0 && getPagerScrollY() % pageSize == 0) { // 刚好滑到某页
+                            int index = getPagerScrollY() / pageSize;
+                            if (index != cur) {
+                                pagerManager.setCurrentPage(index);
 //                            System.out.println("selectPage:" + index);
-                            selectPage();
+                                selectPage();
+                            }
                         }
                     }
                 }
@@ -812,7 +802,7 @@ public class LoopPager extends FrameLayout implements AdapterHost {
     }
 
     /**
-     * 选中某页
+     * 选中当前页
      */
     private void selectPage() {
         if ((actionFlag & ACTION_FLAG_TOUCHING) != 0) { // 触摸滑动中
