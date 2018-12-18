@@ -162,10 +162,12 @@ public class LoopPager extends FrameLayout implements AdapterHost {
         scrollHelper = new ScrollHelper(gestureHelper) {
             @Override
             protected boolean canScroll() {
-                return (orientation == ORIENTATION_HORIZONTAL &&
+                boolean result = (orientation == ORIENTATION_HORIZONTAL &&
                         gestureHelper.isHorizontalGesture()) ||
                         (orientation == ORIENTATION_VERTICAL &&
                                 gestureHelper.isVerticalGesture());
+//                System.out.println("canScroll:" + result);
+                return result;
             }
 
             @Override
@@ -190,12 +192,15 @@ public class LoopPager extends FrameLayout implements AdapterHost {
 
             @Override
             protected void viewScrollTo(int x, int y) {
-                System.out.println(String.format("viewScrollTo:%d,%d", x, y));
-                pagerScrollTo(x, y);
+                if (isTouchScroll()) { // 可以触摸滑动
+                    pagerScrollTo(x, y);
+                }
             }
 
             @Override
             protected void viewFling(float xv, float yv) {
+                if (!isTouchScroll()) return; // 不能触摸滑动
+
                 if (orientation == ORIENTATION_HORIZONTAL &&
                         computeHorizontalScrollExtent() > 0) {
 
@@ -289,7 +294,7 @@ public class LoopPager extends FrameLayout implements AdapterHost {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        scrollHelper.onTouchEvent(ev);
+        handleTouchEvent(ev);
         boolean result = interceptTouchHelper.onInterceptTouchEvent(ev);
         if (!isTouchScroll()) {
             return false;
@@ -304,13 +309,21 @@ public class LoopPager extends FrameLayout implements AdapterHost {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (!isTouchScroll()) {
-            return false;
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            performClick();
         }
+        handleTouchEvent(event);
+        return true;
+    }
 
+    /**
+     * 处理触摸事件
+     *
+     * @param event 事件
+     */
+    private void handleTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             // 停止滑动动画
-            performClick();
             if (!scroller.isFinished()) {
                 scroller.abortAnimation();
             }
@@ -325,11 +338,7 @@ public class LoopPager extends FrameLayout implements AdapterHost {
             actionFlag &= ~ACTION_FLAG_RESET_TOUCH; // 取消重置标志
             scrollHelper.setStartPosition(event.getX(), event.getY());
         }
-
-        System.out.println(String.format("onTouchEvent:psx=%d,psy=%d", getPagerScrollX(), getPagerScrollY()));
         scrollHelper.onTouchEvent(event);
-
-        return true;
     }
 
     @Override
@@ -345,8 +354,8 @@ public class LoopPager extends FrameLayout implements AdapterHost {
     public void computeScroll() {
         super.computeScroll();
         if (scroller.computeScrollOffset()) {
-            System.out.println(String.format("computeScroll:curX=%d,curY=%d,finalX=%d,finalY=%d,pagerX=%d,pagerY=%d",
-                    scroller.getCurrX(), scroller.getCurrY(), scroller.getFinalX(), scroller.getFinalY(), getPagerScrollX(), getPagerScrollY()));
+//            System.out.println(String.format("computeScroll:curX=%d,curY=%d,finalX=%d,finalY=%d,pagerX=%d,pagerY=%d",
+//                    scroller.getCurrX(), scroller.getCurrY(), scroller.getFinalX(), scroller.getFinalY(), getPagerScrollX(), getPagerScrollY()));
             if (scroller.getCurrX() == scroller.getFinalX() &&
                     getPagerScrollX() == scroller.getFinalX() &&
                     scroller.getCurrY() == scroller.getFinalY() &&
@@ -749,6 +758,15 @@ public class LoopPager extends FrameLayout implements AdapterHost {
         scroller.startScroll(getPagerScrollX(), getPagerScrollY(), dx, dy, duration);
     }
 
+    /**
+     * 获取页管理器
+     *
+     * @return 页管理器
+     */
+    protected PagerManager getPagerManager() {
+        return pagerManager;
+    }
+
     private void changePagerScroll() {
 //        System.out.println(String.format("changePagerScroll:x=%d,y=%d", getPagerScrollX(), getPagerScrollY()));
 
@@ -790,7 +808,8 @@ public class LoopPager extends FrameLayout implements AdapterHost {
                             int index = getPagerScrollX() / pageSize;
                             if (index != cur) {
                                 pagerManager.setCurrentPage(index);
-                                System.out.println("selectPage:index=" + index);
+//                                System.out.println("selectPage:index=" + index);
+//                                System.out.println("selectPage:x=" + getPagerScrollX());
                                 selectPage();
                             }
                         }
@@ -801,7 +820,7 @@ public class LoopPager extends FrameLayout implements AdapterHost {
                             int index = getPagerScrollY() / pageSize;
                             if (index != cur) {
                                 pagerManager.setCurrentPage(index);
-                                System.out.println("selectPage:" + index);
+//                                System.out.println("selectPage:" + index);
                                 selectPage();
                             }
                         }

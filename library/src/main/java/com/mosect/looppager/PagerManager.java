@@ -58,7 +58,10 @@ public abstract class PagerManager {
         }
 
         this.jumpType = 0;
-        this.pageHolders = new PageHolder[beforeCacheCount + 1 + afterCacheCount];
+        if (null == this.pageHolders ||
+                this.pageHolders.length != beforeCacheCount + afterCacheCount + 1) {
+            this.pageHolders = new PageHolder[beforeCacheCount + 1 + afterCacheCount];
+        }
         this.pagerAdapter = pagerAdapter;
         this.beforeLoop = beforeLoop;
         this.afterLoop = afterLoop;
@@ -131,7 +134,7 @@ public abstract class PagerManager {
                 }
                 updatePagesInfo();
             }
-            System.out.println("PagerManager.readyJump:" + this);
+//            System.out.println("PagerManager.readyJump:" + this);
         }
     }
 
@@ -151,7 +154,7 @@ public abstract class PagerManager {
                 addBeforePage(i, --pos);
             }
             updatePagesInfo();
-            System.out.println("PagerManager.finishJump:" + this);
+//            System.out.println("PagerManager.finishJump:" + this);
         } else if (jumpType < 0) {
             // 加载了前面的页面
             jumpType = 0; // 重置跳转标志
@@ -164,7 +167,7 @@ public abstract class PagerManager {
                 addAfterPage(i, ++pos);
             }
             updatePagesInfo();
-            System.out.println("PagerManager.finishJump:" + this);
+//            System.out.println("PagerManager.finishJump:" + this);
         }
     }
 
@@ -206,11 +209,11 @@ public abstract class PagerManager {
             if (offset > 0) { // 加载后面的页
                 after(offset);
                 updatePagesInfo();
-                System.out.println(String.format("PagerManager.setCurrentPage[%d]:%s", index, this.toString()));
+//                System.out.println(String.format("PagerManager.setCurrentPage[%d]:%s", index, this.toString()));
             } else { // 加载前面的页
                 before(-offset);
                 updatePagesInfo();
-                System.out.println(String.format("PagerManager.setCurrentPage[%d]:%s", index, this.toString()));
+//                System.out.println(String.format("PagerManager.setCurrentPage[%d]:%s", index, this.toString()));
             }
         }
     }
@@ -316,7 +319,7 @@ public abstract class PagerManager {
             }
         }
         updatePagesInfo();
-        System.out.println("PagerManager.init:" + this);
+//        System.out.println("PagerManager.init:" + this);
     }
 
     /**

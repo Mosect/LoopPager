@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.mosect.looppager.LoopPager;
 import com.mosect.looppager.PageHolder;
@@ -81,7 +82,16 @@ public class InfoActivity extends AppCompatActivity {
             protected PageHolder onCreatePage(ViewGroup parent, int type) {
                 View view = getLayoutInflater()
                         .inflate(R.layout.page_content, parent, false);
-                return new PageHolder(view);
+                final PageHolder holder = new PageHolder(view);
+                view.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Toast.makeText(InfoActivity.this,
+                                "点击了：" + String.valueOf(holder.getAdapterPosition() + 1),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+                return holder;
             }
 
             @Override

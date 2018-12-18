@@ -6,8 +6,8 @@ publish {
     userOrg = 'mosect' // bintray.com用户名
     groupId = 'com.mosect' // jcenter上的路径,bintray上创建Package时填写的Version control项
     artifactId = 'LoopPager' // 项目名称，bintray上创建Package时填写的Name项
-    publishVersion = '1.0.2' // 版本号
-    desc = '优化滑动' // 描述，不重要
+    publishVersion = '1.0.3' // 版本号
+    desc = '修复页滑动冲突问题' // 描述，不重要
     website = 'http://www.mosect.com' // 网站，最好有，不重要
 }
 
@@ -45,5 +45,5 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation 'com.mosect:ViewUtils:1.0.2'
+    implementation 'com.mosect:ViewUtils:1.0.3'
 }
