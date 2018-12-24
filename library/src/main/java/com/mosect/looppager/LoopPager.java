@@ -347,6 +347,12 @@ public class LoopPager extends FrameLayout implements AdapterHost {
         if ((actionFlag & ACTION_FLAG_INIT) != 0) {
             initPagerManager();
             actionFlag &= ~ACTION_FLAG_INIT;
+            // 必须执行以下操作，不然，子视图的内容不会被加载出来
+            for (int i = 0; i < getChildCount(); i++) {
+                View child = getChildAt(i);
+                if (child.getVisibility() == GONE) continue;
+                child.requestLayout();
+            }
         }
     }
 
