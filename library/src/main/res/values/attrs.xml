@@ -20,10 +20,14 @@
         <!--滑动速度-->
         <attr name="smoothVelocity" format="dimension|reference" />
         <!--前缓存数量-->
-        <attr name="beforeCache" format="integer" />
+        <attr name="beforeCache" format="integer|reference" />
         <!--后缓存数量-->
-        <attr name="afterCache" format="integer" />
+        <attr name="afterCache" format="integer|reference" />
         <!--是否可以触摸滑动页面-->
         <attr name="touchScroll" format="boolean" />
+        <!--自动播放时间（轮播时间间隔）-->
+        <attr name="playTime" format="integer|reference" />
+        <!--是否自动播放（轮播）-->
+        <attr name="play" format="boolean|reference" />
     </declare-styleable>
 </resources>

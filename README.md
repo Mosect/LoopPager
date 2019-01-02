@@ -5,18 +5,18 @@
 已上传jcenter，可以直接引用。
 ### Gradle
 ```
-implementation 'com.mosect:LoopPager:1.0.3'
+implementation 'com.mosect:LoopPager:1.0.5'
 ```
 ### 旧版Gradle
 ```
-compile 'com.mosect:LoopPager:1.0.3'
+compile 'com.mosect:LoopPager:1.0.5'
 ```
 ### Maven
 ```
 <dependency>
   <groupId>com.mosect</groupId>
   <artifactId>LoopPager</artifactId>
-  <version>1.0.3</version>
+  <version>1.0.5</version>
   <type>pom</type>
 </dependency>
 ```
@@ -31,6 +31,8 @@ smoothVelocity（滑动速度） | setSmoothVelocity | app:smoothVelocity | dime
 beforeCache（前缓存数量） | setPageLimit | app:beforeCache | int（必须大于0）
 afterCache（后缓存数量） | setPageLimit | app:afterCache | int （必须大于0）
 touchScroll（是否开启触摸平滑） | setTouchScroll | app:touchScroll | boolean
+play | startPlay | app:play | boolean，true，开启自动播放（轮播）
+playTime | setPlayTime | app:playTime | int（单位：毫秒，必须大于0，最好超过1s）
 
 ## 视图适配器（Adapter）
 此视图采用的是类似RecyclerView的视图复用机制，必须要设置适配器，视图才有内容显示。
@@ -153,6 +155,9 @@ public interface OnPageChangedListener {
 ## 1.0.4
 ### 修复
 * 修复高版本Android，首次不加载页面内容的BUG
+
+## 1.0.5
+* 新增自动播放（轮播）
 
 # 其他：
 ```

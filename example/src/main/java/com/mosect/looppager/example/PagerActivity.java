@@ -17,10 +17,12 @@ public class PagerActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pager);
+
         final EditText etPages = findViewById(R.id.et_pages);
         final EditText etBeforeCache = findViewById(R.id.et_beforeCache);
         final EditText etAfterCache = findViewById(R.id.et_afterCache);
         final EditText etSmoothVelocity = findViewById(R.id.et_smoothVelocity);
+        final EditText etPlayTime = findViewById(R.id.et_playTime);
 
         final RadioButton rbHorizontal = findViewById(R.id.rb_horizontal);
         final RadioButton rbVertical = findViewById(R.id.rb_vertical);
@@ -30,13 +32,16 @@ public class PagerActivity extends AppCompatActivity {
         final CheckBox cbTop = findViewById(R.id.cb_top);
         final CheckBox cbRight = findViewById(R.id.cb_right);
         final CheckBox cbBottom = findViewById(R.id.cb_bottom);
+        final CheckBox cbPlay = findViewById(R.id.cb_play);
 
         // 默认值
         etPages.setText("5");
         etBeforeCache.setText("1");
         etAfterCache.setText("1");
+        etPlayTime.setText("5000");
         etSmoothVelocity.setText(String.valueOf(LoopPager.DEFAULT_SMOOTH_VELOCITY_DP));
         cbTouchScroll.setChecked(true);
+        cbPlay.setChecked(true);
         rbHorizontal.setChecked(true);
         cbLeft.setChecked(true);
         cbRight.setChecked(true);
@@ -47,6 +52,7 @@ public class PagerActivity extends AppCompatActivity {
                 int pages = AppUtils.getNumber(etPages);
                 int beforeCache = AppUtils.getNumber(etBeforeCache);
                 int afterCache = AppUtils.getNumber(etAfterCache);
+                int playTime = AppUtils.getNumber(etPlayTime);
                 int loop = LoopPager.LOOP_NONE;
                 int orientation = 0;
                 if (cbLeft.isChecked()) {
@@ -76,6 +82,8 @@ public class PagerActivity extends AppCompatActivity {
                 intent.putExtra("orientation", orientation);
                 intent.putExtra("smoothVelocity", AppUtils.getNumber(etSmoothVelocity));
                 intent.putExtra("touchScroll", cbTouchScroll.isChecked());
+                intent.putExtra("play", cbPlay.isChecked());
+                intent.putExtra("playTime", playTime);
                 startActivity(intent);
             }
         });

@@ -84,6 +84,10 @@ public class LoopPager extends FrameLayout implements AdapterHost {
      * 默认平滑速度，单位：dp/s
      */
     public static final int DEFAULT_SMOOTH_VELOCITY_DP = 550;
+    /**
+     * 默认轮播时间间隔
+     */
+    public static final int DEFAULT_PLAY_TIME = 1500;
 
     private int actionFlag;
 
@@ -108,6 +112,10 @@ public class LoopPager extends FrameLayout implements AdapterHost {
     private InterceptTouchHelper interceptTouchHelper; // 拦截滑动事件辅助器，决定是否拦截滑动事件
     private float smoothVelocity; // 平滑速度，像素/秒
 
+    private int playTime = DEFAULT_PLAY_TIME;
+    private boolean attached;
+    private LoopPlayer loopPlayer;
+
     public LoopPager(Context context) {
         super(context);
         init(null);
@@ -131,6 +139,8 @@ public class LoopPager extends FrameLayout implements AdapterHost {
         smoothVelocity = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                 DEFAULT_SMOOTH_VELOCITY_DP, getContext().getResources().getDisplayMetrics());
         boolean touchScroll = true;
+        boolean play = false;
+        int playTime = DEFAULT_PLAY_TIME;
         if (null != attrs) {
             TypedArray ta = getContext().obtainStyledAttributes(attrs, R.styleable.LoopPager);
             beforeCacheCount = ta.getInteger(R.styleable.LoopPager_beforeCache, beforeCacheCount);
@@ -139,9 +149,12 @@ public class LoopPager extends FrameLayout implements AdapterHost {
             orientation = ta.getInteger(R.styleable.LoopPager_orientation, orientation);
             smoothVelocity = ta.getDimension(R.styleable.LoopPager_smoothVelocity, smoothVelocity);
             touchScroll = ta.getBoolean(R.styleable.LoopPager_touchScroll, true);
+            play = ta.getBoolean(R.styleable.LoopPager_play, false);
+            playTime = ta.getInteger(R.styleable.LoopPager_playTime, DEFAULT_PLAY_TIME);
             ta.recycle();
         }
         setTouchScroll(touchScroll);
+        setPlayTime(playTime);
 
         scroller = new Scroller(getContext());
         interceptTouchHelper = new InterceptTouchHelper(this);
@@ -275,6 +288,10 @@ public class LoopPager extends FrameLayout implements AdapterHost {
                 }
             }
         };
+
+        if (play) {
+            startPlay();
+        }
     }
 
     @Override
@@ -329,9 +346,18 @@ public class LoopPager extends FrameLayout implements AdapterHost {
             }
             actionFlag |= ACTION_FLAG_TOUCHING;
             actionFlag &= ~ACTION_FLAG_RESET_TOUCH; // 取消重置滑动
+            // 停止轮播
+            if (null != loopPlayer) {
+                loopPlayer.stop();
+            }
+
         } else if (event.getAction() == MotionEvent.ACTION_UP ||
                 event.getAction() == MotionEvent.ACTION_CANCEL) { // 滑动抬起或取消
             actionFlag &= ~ACTION_FLAG_TOUCHING; // 取消触摸
+            // 开始轮播
+            if (null != loopPlayer) {
+                loopPlayer.start();
+            }
         }
 
         if ((actionFlag & ACTION_FLAG_RESET_TOUCH) != 0) {
@@ -415,6 +441,24 @@ public class LoopPager extends FrameLayout implements AdapterHost {
     public void onAdapterDataChanged(PagerAdapter adapter) {
         if (adapter == this.adapter) {
             pagerManager.update(); // 更新页面
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        attached = false;
+        if (null != loopPlayer) {
+            loopPlayer.stop();
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        attached = true;
+        if (null != loopPlayer) {
+            loopPlayer.start();
         }
     }
 
@@ -701,6 +745,55 @@ public class LoopPager extends FrameLayout implements AdapterHost {
     }
 
     /**
+     * 设置轮播时间
+     *
+     * @param loopPlayTime 轮播时间
+     */
+    public void setPlayTime(int loopPlayTime) {
+        this.playTime = loopPlayTime;
+        if (null != loopPlayer) {
+            boolean running = loopPlayer.isRunning();
+            loopPlayer.stop();
+            loopPlayer = new LoopPlayer(loopPlayTime);
+            if (running) {
+                loopPlayer.start();
+            }
+        }
+    }
+
+    /**
+     * 获取轮播时间
+     *
+     * @return 轮播时间
+     */
+    public int getPlayTime() {
+        return playTime;
+    }
+
+    /**
+     * 开始轮播
+     */
+    public void startPlay() {
+        if (null != loopPlayer) {
+            loopPlayer.stop();
+        }
+        loopPlayer = new LoopPlayer(playTime);
+        if (attached) {
+            loopPlayer.start();
+        }
+    }
+
+    /**
+     * 停止轮播
+     */
+    public void stopPlay() {
+        if (null != loopPlayer) {
+            loopPlayer.stop();
+            loopPlayer = null;
+        }
+    }
+
+    /**
      * 布局子视图
      */
     protected void layoutChildren() {
@@ -975,5 +1068,39 @@ public class LoopPager extends FrameLayout implements AdapterHost {
         void onPageScroll(LoopPager view, int pagePosition, int pageOffset, int pageSize);
 
         void onPageSelected(LoopPager view, int pagePosition);
+    }
+
+    /**
+     * 循环播放器
+     */
+    private class LoopPlayer {
+
+        private int time;
+        private Runnable runnable;
+
+        LoopPlayer(int time) {
+            this.time = time;
+        }
+
+        void start() {
+            runnable = new Runnable() {
+                @Override
+                public void run() {
+                    if (runnable == this) {
+                        jumpAfterPage(true);
+                        postDelayed(runnable, time);
+                    }
+                }
+            };
+            postDelayed(runnable, time);
+        }
+
+        void stop() {
+            runnable = null;
+        }
+
+        boolean isRunning() {
+            return null != runnable;
+        }
     }
 }

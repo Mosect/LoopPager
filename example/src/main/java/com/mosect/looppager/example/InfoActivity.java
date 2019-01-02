@@ -59,6 +59,9 @@ public class InfoActivity extends AppCompatActivity {
         float smoothVelocity = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, smoothVelocityDp,
                 getResources().getDisplayMetrics());
         boolean touchScroll = getIntent().getBooleanExtra("touchScroll", true);
+        boolean play = getIntent().getBooleanExtra("play", false);
+        int playTime = getIntent().getIntExtra("playTime", 5000);
+
         lpContent.setOrientation(orientation);
         lpContent.setLoop(loop);
         lpContent.setPageLimit(beforeCache, afterCache);
@@ -119,5 +122,9 @@ public class InfoActivity extends AppCompatActivity {
                 }
             }
         });
+        if (playTime > 0 && play) {
+            lpContent.setPlayTime(playTime);
+            lpContent.startPlay();
+        }
     }
 }

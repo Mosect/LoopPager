@@ -8,6 +8,8 @@
     app:beforeCache="1"
     app:loop="horizontal"
     app:orientation="horizontal"
+    app:play="true"
+    app:playTime="2000"
     app:smoothVelocity="500dp"
     app:touchScroll="true">
 
