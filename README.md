@@ -5,18 +5,18 @@
 已上传jcenter，可以直接引用。
 ### Gradle
 ```
-implementation 'com.mosect:LoopPager:1.0.5'
+implementation 'com.mosect:LoopPager:1.0.6'
 ```
 ### 旧版Gradle
 ```
-compile 'com.mosect:LoopPager:1.0.5'
+compile 'com.mosect:LoopPager:1.0.6'
 ```
 ### Maven
 ```
 <dependency>
   <groupId>com.mosect</groupId>
   <artifactId>LoopPager</artifactId>
-  <version>1.0.5</version>
+  <version>1.0.6</version>
   <type>pom</type>
 </dependency>
 ```
@@ -158,6 +158,10 @@ public interface OnPageChangedListener {
 
 ## 1.0.5
 * 新增自动播放（轮播）
+
+## 1.0.6
+### 修复
+* 修复单个页面下标越界问题
 
 # 其他：
 ```

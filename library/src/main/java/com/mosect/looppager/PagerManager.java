@@ -392,8 +392,7 @@ public abstract class PagerManager {
             addPage(index, pos);
         } else {
             if (beforeLoop) {
-                int adapterPosition = pagerAdapter.getPageCount() -
-                        (-pos) % pagerAdapter.getPageCount();
+                int adapterPosition = (pagerAdapter.getPageCount() - (-pos)) % pagerAdapter.getPageCount();
                 addPage(index, adapterPosition);
             } else {
                 pageHolders[index] = null;
